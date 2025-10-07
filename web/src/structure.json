@@ -1,0 +1,1498 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/ocr-doc-extract.schema.json",
+  "title": "Single-Page OCR Extraction Payload",
+  "type": "object",
+  "required": [
+    "page_index",
+    "doc_type",
+    "extracted"
+  ],
+  "properties": {
+    "page_index": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "doc_type": {
+      "type": "string",
+      "enum": [
+        "TaxInvoice",
+        "EWayBill",
+        "LorryReceipt",
+        "PackingList",
+        "DeliveryChallan",
+        "PurchaseOrder",
+        "CreditNote",
+        "DebitNote",
+        "PaymentAdvice",
+        "ZetwerkInspectionReport",
+        "MaterialReport",
+        "WeighmentSlip",
+        "TestCertificate",
+        "GatePass",
+        "BillOfLading",
+        "QuotationProforma",
+        "Unknown"
+      ]
+    },
+    "meta": {
+      "type": "object",
+      "description": "Optional classifier metadata carried forward from the first step.",
+      "properties": {
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "brief_summary": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "key_hints": {
+          "type": "array",
+          "maxItems": 6,
+          "items": {
+            "type": "string",
+            "maxLength": 80
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "extracted": {
+      "description": "Doc-type specific extracted fields.",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/TaxInvoice"
+        },
+        {
+          "$ref": "#/$defs/EWayBill"
+        },
+        {
+          "$ref": "#/$defs/LorryReceipt"
+        },
+        {
+          "$ref": "#/$defs/PackingList"
+        },
+        {
+          "$ref": "#/$defs/DeliveryChallan"
+        },
+        {
+          "$ref": "#/$defs/PurchaseOrder"
+        },
+        {
+          "$ref": "#/$defs/CreditNote"
+        },
+        {
+          "$ref": "#/$defs/DebitNote"
+        },
+        {
+          "$ref": "#/$defs/PaymentAdvice"
+        },
+        {
+          "$ref": "#/$defs/ZetwerkInspectionReport"
+        },
+        {
+          "$ref": "#/$defs/MaterialReport"
+        },
+        {
+          "$ref": "#/$defs/WeighmentSlip"
+        },
+        {
+          "$ref": "#/$defs/TestCertificate"
+        },
+        {
+          "$ref": "#/$defs/GatePass"
+        },
+        {
+          "$ref": "#/$defs/BillOfLading"
+        },
+        {
+          "$ref": "#/$defs/QuotationProforma"
+        },
+        {
+          "$ref": "#/$defs/Unknown"
+        }
+      ],
+      "discriminator": {
+        "propertyName": "doc_type",
+        "mapping": {
+          "TaxInvoice": "#/$defs/TaxInvoice",
+          "EWayBill": "#/$defs/EWayBill",
+          "LorryReceipt": "#/$defs/LorryReceipt",
+          "PackingList": "#/$defs/PackingList",
+          "DeliveryChallan": "#/$defs/DeliveryChallan",
+          "PurchaseOrder": "#/$defs/PurchaseOrder",
+          "CreditNote": "#/$defs/CreditNote",
+          "DebitNote": "#/$defs/DebitNote",
+          "PaymentAdvice": "#/$defs/PaymentAdvice",
+          "ZetwerkInspectionReport": "#/$defs/ZetwerkInspectionReport",
+          "MaterialReport": "#/$defs/MaterialReport",
+          "WeighmentSlip": "#/$defs/WeighmentSlip",
+          "TestCertificate": "#/$defs/TestCertificate",
+          "GatePass": "#/$defs/GatePass",
+          "BillOfLading": "#/$defs/BillOfLading",
+          "QuotationProforma": "#/$defs/QuotationProforma",
+          "Unknown": "#/$defs/Unknown"
+        }
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "Party": {
+      "type": "object",
+      "x-displayName": "Party",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "gstin": {
+          "type": "string"
+        },
+        "pan": {
+          "type": "string"
+        },
+        "address": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "state_code": {
+          "type": "string"
+        },
+        "contact": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Money": {
+      "type": "object",
+      "x-displayName": "Money",
+      "properties": {
+        "value": {
+          "type": "number"
+        },
+        "currency": {
+          "type": "string",
+          "default": "INR"
+        }
+      },
+      "required": [
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "LineItem": {
+      "type": "object",
+      "x-displayName": "Line Item",
+      "properties": {
+        "sl_no": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "item_code": {
+          "type": "string"
+        },
+        "hsn_sac": {
+          "type": "string"
+        },
+        "uom": {
+          "type": "string"
+        },
+        "qty": {
+          "type": "number"
+        },
+        "rate": {
+          "type": "number"
+        },
+        "taxable_value": {
+          "type": "number"
+        },
+        "cgst_rate": {
+          "type": "number"
+        },
+        "cgst_amount": {
+          "type": "number"
+        },
+        "sgst_rate": {
+          "type": "number"
+        },
+        "sgst_amount": {
+          "type": "number"
+        },
+        "igst_rate": {
+          "type": "number"
+        },
+        "igst_amount": {
+          "type": "number"
+        },
+        "total": {
+          "type": "number"
+        },
+        "batch_lot": {
+          "type": "string"
+        },
+        "serial_no": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Vehicle": {
+      "type": "object",
+      "x-displayName": "Vehicle",
+      "properties": {
+        "vehicle_no": {
+          "type": "string"
+        },
+        "driver_name": {
+          "type": "string"
+        },
+        "driver_phone": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "TaxInvoice": {
+      "type": "object",
+      "x-displayName": "Tax Invoice",
+      "x-aliases": [
+        "Invoice",
+        "GST Invoice",
+        "Tax Inv."
+      ],
+      "properties": {
+        "doc_type": {
+          "const": "TaxInvoice"
+        },
+        "invoice_no": {
+          "type": "string"
+        },
+        "invoice_date": {
+          "type": "string"
+        },
+        "seller": {
+          "$ref": "#/$defs/Party"
+        },
+        "buyer": {
+          "$ref": "#/$defs/Party"
+        },
+        "ship_to": {
+          "$ref": "#/$defs/Party"
+        },
+        "po_no": {
+          "type": "string",
+          "description": "orr"
+        },
+        "irn": {
+          "type": "string"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/LineItem"
+          }
+        },
+        "totals": {
+          "type": "object",
+          "properties": {
+            "subtotal": {
+              "type": "number"
+            },
+            "cgst": {
+              "type": "number"
+            },
+            "sgst": {
+              "type": "number"
+            },
+            "igst": {
+              "type": "number"
+            },
+            "round_off": {
+              "type": "number"
+            },
+            "freight": {
+              "type": "number"
+            },
+            "other_charges": {
+              "type": "number"
+            },
+            "grand_total": {
+              "type": "number"
+            },
+            "grand_total_in_words": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "bank": {
+          "type": "object",
+          "properties": {
+            "account_name": {
+              "type": "string"
+            },
+            "account_no": {
+              "type": "string"
+            },
+            "ifsc": {
+              "type": "string"
+            },
+            "bank_name": {
+              "type": "string"
+            },
+            "branch": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "terms": {
+          "type": "string"
+        },
+        "signatory": {
+          "type": "string"
+        },
+        "transporter_name": {
+          "type": "string"
+        },
+        "transport_vehicle_number": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "doc_type",
+        "invoice_no",
+        "seller",
+        "buyer"
+      ]
+    },
+    "EWayBill": {
+      "type": "object",
+      "x-displayName": "E-Way Bill",
+      "x-aliases": [
+        "EWay Bill",
+        "EWB",
+        "E-Way"
+      ],
+      "properties": {
+        "doc_type": {
+          "const": "EWayBill"
+        },
+        "ewb_no": {
+          "type": "string"
+        },
+        "generated_on": {
+          "type": "string"
+        },
+        "valid_upto": {
+          "type": "string"
+        },
+        "part": {
+          "type": "string",
+          "enum": [
+            "A",
+            "B",
+            "Unknown"
+          ]
+        },
+        "from": {
+          "$ref": "#/$defs/Party"
+        },
+        "to": {
+          "$ref": "#/$defs/Party"
+        },
+        "document_ref_type": {
+          "type": "string"
+        },
+        "document_ref_no": {
+          "type": "string"
+        },
+        "document_ref_date": {
+          "type": "string"
+        },
+        "vehicle": {
+          "$ref": "#/$defs/Vehicle"
+        },
+        "distance_km": {
+          "type": "number"
+        },
+        "transporter": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "gstin": {
+              "type": "string"
+            },
+            "transporter_id": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "total_value": {
+          "type": "number"
+        },
+        "hsn_summary": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "hsn": {
+                "type": "string"
+              },
+              "qty": {
+                "type": "number"
+              },
+              "taxable_value": {
+                "type": "number"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "doc_type",
+        "ewb_no"
+      ]
+    },
+    "LorryReceipt": {
+      "type": "object",
+      "x-displayName": "Lorry Receipt",
+      "x-aliases": [
+        "LR",
+        "Bilty",
+        "Consignment Note",
+        "Docket",
+        "Docket No",
+        "LR Copy"
+      ],
+      "properties": {
+        "doc_type": {
+          "const": "LorryReceipt"
+        },
+        "lr_no": {
+          "type": "string"
+        },
+        "docket_no": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string"
+        },
+        "consignor": {
+          "$ref": "#/$defs/Party"
+        },
+        "consignee": {
+          "$ref": "#/$defs/Party"
+        },
+        "origin": {
+          "type": "string"
+        },
+        "destination": {
+          "type": "string"
+        },
+        "vehicle": {
+          "$ref": "#/$defs/Vehicle"
+        },
+        "ewaybill_no": {
+          "type": "string"
+        },
+        "transporter": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "gstin": {
+              "type": "string"
+            },
+            "pan": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "packages": {
+          "type": "integer"
+        },
+        "weight_kg": {
+          "type": "number"
+        },
+        "freight": {
+          "type": "object",
+          "properties": {
+            "basic": {
+              "type": "number"
+            },
+            "hamali": {
+              "type": "number"
+            },
+            "oda": {
+              "type": "number"
+            },
+            "other_charges": {
+              "type": "number"
+            },
+            "total": {
+              "type": "number"
+            },
+            "to_pay_or_paid": {
+              "type": "string",
+              "enum": [
+                "To-Pay",
+                "Paid",
+                "TBB",
+                "Unknown"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "remarks": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "doc_type",
+        "lr_no"
+      ]
+    },
+    "PackingList": {
+      "type": "object",
+      "x-displayName": "Packing List",
+      "x-aliases": [
+        "PackingList"
+      ],
+      "properties": {
+        "doc_type": {
+          "const": "PackingList"
+        },
+        "packing_list_no": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string"
+        },
+        "supplier": {
+          "$ref": "#/$defs/Party"
+        },
+        "buyer": {
+          "$ref": "#/$defs/Party"
+        },
+        "po_no": {
+          "type": "string"
+        },
+        "total_packages": {
+          "type": "integer"
+        },
+        "gross_weight_kg": {
+          "type": "number"
+        },
+        "net_weight_kg": {
+          "type": "number"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "box_no": {
+                "type": "string"
+              },
+              "item_code": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "qty": {
+                "type": "number"
+              },
+              "uom": {
+                "type": "string"
+              },
+              "net_weight_kg": {
+                "type": "number"
+              },
+              "gross_weight_kg": {
+                "type": "number"
+              },
+              "dimensions_mm": {
+                "type": "string"
+              },
+              "marks_nos": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "doc_type",
+        "packing_list_no"
+      ]
+    },
+    "DeliveryChallan": {
+      "type": "object",
+      "x-displayName": "Delivery Challan",
+      "x-aliases": [
+        "DC",
+        "Challan",
+        "Delivery Note"
+      ],
+      "properties": {
+        "doc_type": {
+          "const": "DeliveryChallan"
+        },
+        "dc_no": {
+          "type": "string"
+        },
+        "dc_date": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "sender": {
+          "$ref": "#/$defs/Party"
+        },
+        "receiver": {
+          "$ref": "#/$defs/Party"
+        },
+        "vehicle": {
+          "$ref": "#/$defs/Vehicle"
+        },
+        "reference": {
+          "type": "object",
+          "properties": {
+            "po_no": {
+              "type": "string"
+            },
+            "so_no": {
+              "type": "string"
+            },
+            "invoice_no": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "description": {
+                "type": "string"
+              },
+              "item_code": {
+                "type": "string"
+              },
+              "uom": {
+                "type": "string"
+              },
+              "qty": {
+                "type": "number"
+              },
+              "hsn_sac": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "doc_type",
+        "dc_no"
+      ]
+    },
+    "PurchaseOrder": {
+      "type": "object",
+      "x-displayName": "Purchase Order",
+      "x-aliases": [
+        "PO"
+      ],
+      "properties": {
+        "doc_type": {
+          "const": "PurchaseOrder"
+        },
+        "po_no": {
+          "type": "string"
+        },
+        "po_date": {
+          "type": "string"
+        },
+        "buyer": {
+          "$ref": "#/$defs/Party"
+        },
+        "supplier": {
+          "$ref": "#/$defs/Party"
+        },
+        "delivery_terms": {
+          "type": "string"
+        },
+        "payment_terms": {
+          "type": "string"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "allOf": [
+              {
+                "$ref": "#/$defs/LineItem"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "expected_date": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            ]
+          }
+        }
+      },
+      "required": [
+        "doc_type",
+        "po_no",
+        "buyer",
+        "supplier"
+      ]
+    },
+    "CreditNote": {
+      "type": "object",
+      "x-displayName": "Credit Note",
+      "x-aliases": [
+        "CN"
+      ],
+      "properties": {
+        "doc_type": {
+          "const": "CreditNote"
+        },
+        "note_no": {
+          "type": "string"
+        },
+        "note_date": {
+          "type": "string"
+        },
+        "seller": {
+          "$ref": "#/$defs/Party"
+        },
+        "buyer": {
+          "$ref": "#/$defs/Party"
+        },
+        "reference_invoice_no": {
+          "type": "string"
+        },
+        "irn": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/LineItem"
+          }
+        },
+        "totals": {
+          "type": "object",
+          "properties": {
+            "taxable_value": {
+              "type": "number"
+            },
+            "tax_amount": {
+              "type": "number"
+            },
+            "note_total": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "doc_type",
+        "note_no"
+      ]
+    },
+    "DebitNote": {
+      "type": "object",
+      "x-displayName": "Debit Note",
+      "x-aliases": [
+        "DN"
+      ],
+      "properties": {
+        "doc_type": {
+          "const": "DebitNote"
+        },
+        "note_no": {
+          "type": "string"
+        },
+        "note_date": {
+          "type": "string"
+        },
+        "buyer": {
+          "$ref": "#/$defs/Party"
+        },
+        "seller": {
+          "$ref": "#/$defs/Party"
+        },
+        "reference_invoice_no": {
+          "type": "string"
+        },
+        "irn": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/LineItem"
+          }
+        },
+        "totals": {
+          "type": "object",
+          "properties": {
+            "taxable_value": {
+              "type": "number"
+            },
+            "tax_amount": {
+              "type": "number"
+            },
+            "note_total": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "doc_type",
+        "note_no"
+      ]
+    },
+    "PaymentAdvice": {
+      "type": "object",
+      "x-displayName": "Payment Advice",
+      "x-aliases": [
+        "Bank Advice",
+        "NEFT Advice",
+        "RTGS Advice"
+      ],
+      "properties": {
+        "doc_type": {
+          "const": "PaymentAdvice"
+        },
+        "advice_no": {
+          "type": "string"
+        },
+        "advice_date": {
+          "type": "string"
+        },
+        "payer": {
+          "$ref": "#/$defs/Party"
+        },
+        "payee": {
+          "$ref": "#/$defs/Party"
+        },
+        "bank_name": {
+          "type": "string"
+        },
+        "ifsc": {
+          "type": "string"
+        },
+        "account_no": {
+          "type": "string"
+        },
+        "utr": {
+          "type": "string"
+        },
+        "amount": {
+          "$ref": "#/$defs/Money"
+        },
+        "tds_amount": {
+          "type": "number"
+        },
+        "invoice_refs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "invoice_no": {
+                "type": "string"
+              },
+              "invoice_date": {
+                "type": "string"
+              },
+              "amount": {
+                "type": "number"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "doc_type",
+        "utr",
+        "amount"
+      ]
+    },
+    "ZetwerkInspectionReport": {
+      "type": "object",
+      "x-displayName": "Zetwerk Inspection Report",
+      "x-aliases": [
+        "ZW Inspection Report",
+        "Inspection Report (Zetwerk)"
+      ],
+      "properties": {
+        "doc_type": {
+          "const": "ZetwerkInspectionReport"
+        },
+        "report_no": {
+          "type": "string"
+        },
+        "report_date": {
+          "type": "string"
+        },
+        "po_no": {
+          "type": "string"
+        },
+        "item_code": {
+          "type": "string"
+        },
+        "lot_batch": {
+          "type": "string"
+        },
+        "quantity_inspected": {
+          "type": "number"
+        },
+        "sampling_plan": {
+          "type": "string"
+        },
+        "measurements": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "characteristic": {
+                "type": "string"
+              },
+              "spec": {
+                "type": "string"
+              },
+              "measured": {
+                "type": "string"
+              },
+              "result": {
+                "type": "string",
+                "enum": [
+                  "OK",
+                  "NG",
+                  "NA"
+                ]
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "visual_checks": {
+          "type": "string"
+        },
+        "final_disposition": {
+          "type": "string",
+          "enum": [
+            "Accepted",
+            "Rejected",
+            "Conditional",
+            "NA"
+          ]
+        },
+        "inspector": {
+          "type": "string"
+        },
+        "remarks": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "doc_type",
+        "report_no"
+      ]
+    },
+    "MaterialReport": {
+      "type": "object",
+      "x-displayName": "Material Report",
+      "x-aliases": [
+        "GRN",
+        "MRN",
+        "Store Issue",
+        "Store Return",
+        "Inspection Report",
+        "Material Receipt Note"
+      ],
+      "properties": {
+        "doc_type": {
+          "const": "MaterialReport"
+        },
+        "material_report_type": {
+          "type": "string",
+          "enum": [
+            "GRN",
+            "MRN",
+            "StoreIssue",
+            "StoreReturn",
+            "Inspection",
+            "Test",
+            "Generic"
+          ]
+        },
+        "doc_no": {
+          "type": "string"
+        },
+        "doc_date": {
+          "type": "string"
+        },
+        "store_location": {
+          "type": "string"
+        },
+        "reference": {
+          "type": "object",
+          "properties": {
+            "po_no": {
+              "type": "string"
+            },
+            "dc_no": {
+              "type": "string"
+            },
+            "invoice_no": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "item_code": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "uom": {
+                "type": "string"
+              },
+              "qty": {
+                "type": "number"
+              },
+              "batch_lot": {
+                "type": "string"
+              },
+              "accepted_qty": {
+                "type": "number"
+              },
+              "rejected_qty": {
+                "type": "number"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "remarks": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "doc_type",
+        "material_report_type",
+        "doc_no"
+      ]
+    },
+    "WeighmentSlip": {
+      "type": "object",
+      "x-displayName": "Weighment Slip",
+      "x-aliases": [
+        "Weight Slip",
+        "Weighbridge Slip",
+        "Weight Ticket"
+      ],
+      "properties": {
+        "doc_type": {
+          "const": "WeighmentSlip"
+        },
+        "slip_no": {
+          "type": "string"
+        },
+        "date_time": {
+          "type": "string"
+        },
+        "vehicle": {
+          "$ref": "#/$defs/Vehicle"
+        },
+        "material": {
+          "type": "string"
+        },
+        "gross_kg": {
+          "type": "number"
+        },
+        "tare_kg": {
+          "type": "number"
+        },
+        "net_kg": {
+          "type": "number"
+        },
+        "weighbridge_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "doc_type",
+        "slip_no"
+      ]
+    },
+    "TestCertificate": {
+      "type": "object",
+      "x-displayName": "Test Certificate",
+      "x-aliases": [
+        "MTC",
+        "COC",
+        "COA",
+        "Mill Test Certificate"
+      ],
+      "properties": {
+        "doc_type": {
+          "const": "TestCertificate"
+        },
+        "certificate_no": {
+          "type": "string"
+        },
+        "certificate_type": {
+          "type": "string",
+          "enum": [
+            "MTC",
+            "COC",
+            "COA",
+            "Other"
+          ]
+        },
+        "date": {
+          "type": "string"
+        },
+        "grade": {
+          "type": "string"
+        },
+        "specification": {
+          "type": "string"
+        },
+        "heat_no": {
+          "type": "string"
+        },
+        "batch_no": {
+          "type": "string"
+        },
+        "chemical_composition": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "mechanical_properties": {
+          "type": "object",
+          "properties": {
+            "uts": {
+              "type": "number"
+            },
+            "yield_strength": {
+              "type": "number"
+            },
+            "elongation_percent": {
+              "type": "number"
+            },
+            "hardness_hb": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": true
+        },
+        "result": {
+          "type": "string",
+          "enum": [
+            "Conforms",
+            "Does Not Conform",
+            "NA"
+          ]
+        }
+      },
+      "required": [
+        "doc_type",
+        "certificate_no"
+      ]
+    },
+    "GatePass": {
+      "type": "object",
+      "x-displayName": "Gate Pass",
+      "x-aliases": [
+        "Gatepass",
+        "Gate Pass (In/Out)",
+        "GP"
+      ],
+      "properties": {
+        "doc_type": {
+          "const": "GatePass"
+        },
+        "gp_no": {
+          "type": "string"
+        },
+        "gp_date": {
+          "type": "string"
+        },
+        "movement": {
+          "type": "string",
+          "enum": [
+            "Inward",
+            "Outward"
+          ]
+        },
+        "returnable": {
+          "type": "boolean"
+        },
+        "purpose": {
+          "type": "string"
+        },
+        "party": {
+          "$ref": "#/$defs/Party"
+        },
+        "vehicle": {
+          "$ref": "#/$defs/Vehicle"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "description": {
+                "type": "string"
+              },
+              "item_code": {
+                "type": "string"
+              },
+              "uom": {
+                "type": "string"
+              },
+              "qty": {
+                "type": "number"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "doc_type",
+        "gp_no",
+        "movement"
+      ]
+    },
+    "BillOfLading": {
+      "type": "object",
+      "x-displayName": "Bill of Lading / Air Waybill",
+      "x-aliases": [
+        "BL",
+        "B/L",
+        "AWB",
+        "Air Waybill"
+      ],
+      "properties": {
+        "doc_type": {
+          "const": "BillOfLading"
+        },
+        "bl_or_awb_no": {
+          "type": "string"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "Sea",
+            "Air",
+            "Road",
+            "Rail",
+            "Courier",
+            "Unknown"
+          ]
+        },
+        "shipper": {
+          "$ref": "#/$defs/Party"
+        },
+        "consignee": {
+          "$ref": "#/$defs/Party"
+        },
+        "notify_party": {
+          "$ref": "#/$defs/Party"
+        },
+        "pol": {
+          "type": "string",
+          "description": "Port of Loading"
+        },
+        "pod": {
+          "type": "string",
+          "description": "Port of Discharge"
+        },
+        "vessel_or_flight": {
+          "type": "string"
+        },
+        "voyage_or_flight_no": {
+          "type": "string"
+        },
+        "container_nos": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "packages": {
+          "type": "integer"
+        },
+        "gross_weight_kg": {
+          "type": "number"
+        },
+        "incoterm": {
+          "type": "string"
+        },
+        "issue_date": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "doc_type",
+        "bl_or_awb_no"
+      ]
+    },
+    "QuotationProforma": {
+      "type": "object",
+      "x-displayName": "Quotation / Proforma Invoice",
+      "x-aliases": [
+        "Quotation",
+        "Proforma",
+        "PI"
+      ],
+      "properties": {
+        "doc_type": {
+          "const": "QuotationProforma"
+        },
+        "quote_or_pi_no": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string"
+        },
+        "seller": {
+          "$ref": "#/$defs/Party"
+        },
+        "buyer": {
+          "$ref": "#/$defs/Party"
+        },
+        "valid_till": {
+          "type": "string"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/LineItem"
+          }
+        },
+        "taxes_included": {
+          "type": "boolean"
+        },
+        "notes": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "doc_type",
+        "quote_or_pi_no",
+        "seller",
+        "buyer"
+      ]
+    },
+    "Unknown": {
+      "type": "object",
+      "x-displayName": "Unknown",
+      "x-aliases": [],
+      "properties": {
+        "doc_type": {
+          "const": "Unknown"
+        },
+        "raw_text": {
+          "type": "string"
+        },
+        "top_candidates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "doc_type": {
+                "type": "string",
+                "enum": [
+                  "TaxInvoice",
+                  "EWayBill",
+                  "LorryReceipt",
+                  "PackingList",
+                  "DeliveryChallan",
+                  "PurchaseOrder",
+                  "CreditNote",
+                  "DebitNote",
+                  "PaymentAdvice",
+                  "ZetwerkInspectionReport",
+                  "MaterialReport",
+                  "WeighmentSlip",
+                  "TestCertificate",
+                  "GatePass",
+                  "BillOfLading",
+                  "QuotationProforma"
+                ]
+              },
+              "confidence": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            },
+            "required": [
+              "doc_type",
+              "confidence"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 5
+        }
+      },
+      "required": [
+        "doc_type"
+      ]
+    }
+  }
+}
