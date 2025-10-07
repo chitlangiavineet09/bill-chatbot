@@ -5,7 +5,7 @@ from datetime import datetime
 import aiohttp
 
 import fitz  # PyMuPDF
-from fastapi import FastAPI, File, UploadFile, HTTPException, Request
+from fastapi import FastAPI, File, UploadFile, HTTPException, Request, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
@@ -86,9 +86,10 @@ if not OPENAI_API_KEY:
     )
 ALLOWED_ORIGINS = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "").split(",") if o.strip()]
 
-# Consider using gpt-4o-mini for cheaper/faster classification
-MODEL_CLASSIFY = "gpt-4o-2024-08-06"
-MODEL_EXTRACT = "gpt-4.1-2025-04-14"
+# Models are now loaded from prompts.json (configurable via Admin UI)
+# Fallback to these defaults if not specified in prompts.json
+MODEL_CLASSIFY = PROMPTS.get("classification", {}).get("model", "gpt-4o-2024-08-06")
+MODEL_EXTRACT = PROMPTS.get("extraction", {}).get("model", "gpt-4o-2024-08-06")
 
 # Assistant IDs (will be created/reused on startup)
 CLASSIFY_ASSISTANT_ID = None
@@ -843,10 +844,11 @@ IMPORTANT:
     return obj
 
 @app.post("/ocr-stream")
-async def ocr_stream_endpoint(file: UploadFile = File(...)):
+async def ocr_stream_endpoint(file: UploadFile = File(...), threadId: str = Form(None), userId: str = Form(None)):
     """Streaming OCR endpoint that sends results as each page is processed"""
     logger.info(f"=== STREAMING OCR REQUEST STARTED ===")
     logger.info(f"File: {file.filename}, Size: {file.size if hasattr(file, 'size') else 'unknown'}")
+    logger.info(f"Thread ID: {threadId}, User ID: {userId}")
 
     if not file.filename.lower().endswith(".pdf"):
         logger.error(f"Invalid file type: {file.filename}")
@@ -1077,7 +1079,11 @@ async def chat(req: Request):
     logger.info("=== CHAT REQUEST STARTED ===")
     body = await req.json()
     user_msg = body.get("message", "")
+    thread_id = body.get("threadId", "")
+    user_id = body.get("userId", "")
+    
     logger.info(f"Chat message received: {user_msg}")
+    logger.info(f"Thread ID: {thread_id}, User ID: {user_id}")
 
     async def token_stream():
         try:
@@ -1085,7 +1091,7 @@ async def chat(req: Request):
             yield "data: " + json.dumps({"role": "assistant", "content": "Thinking about your bill..."}) + "\n\n"
             await asyncio.sleep(0.2)
             logger.info("Sending main response...")
-            yield "data: " + json.dumps({"role": "assistant", "content": f"Got it: {user_msg}"}) + "\n\n"
+            yield "data: " + json.dumps({"role": "assistant", "content": f"Got it: {user_msg}\n\nI can help you with bill processing, document analysis, and data extraction. Upload a PDF file or ask me questions about your documents!"}) + "\n\n"
             logger.info("Sending completion signal...")
             yield "data: [DONE]\n\n"
             logger.info("=== CHAT REQUEST COMPLETED ===")
@@ -1195,6 +1201,7 @@ async def ocr_stream_endpoint(file: UploadFile = File(...)):
                 },
             )
 
+            logger.info(f"About to send completion event with {len(grouped_results)} grouped results")
             yield f"data: {json.dumps({'type': 'complete', 'data': final_response.dict()})}\n\n"
             yield f"data: [DONE]\n\n"
             logger.info(f"=== STREAMING OCR REQUEST COMPLETED ===")
@@ -1237,11 +1244,22 @@ async def update_prompts(prompts_data: dict):
         with open(prompts_file, 'w', encoding='utf-8') as f:
             json.dump(prompts_data, f, indent=2, ensure_ascii=False)
 
-        global PROMPTS
+        global PROMPTS, MODEL_CLASSIFY, MODEL_EXTRACT
         PROMPTS = prompts_data
-
-        logger.info("Prompts updated successfully")
-        return {"status": "success", "message": "Prompts updated successfully"}
+        
+        # Update models from the new prompts
+        MODEL_CLASSIFY = PROMPTS.get("classification", {}).get("model", "gpt-4o-2024-08-06")
+        MODEL_EXTRACT = PROMPTS.get("extraction", {}).get("model", "gpt-4o-2024-08-06")
+        
+        logger.info(f"Prompts updated successfully. New models: Classify={MODEL_CLASSIFY}, Extract={MODEL_EXTRACT}")
+        return {
+            "status": "success", 
+            "message": "Prompts updated successfully",
+            "models": {
+                "classification": MODEL_CLASSIFY,
+                "extraction": MODEL_EXTRACT
+            }
+        }
 
     except Exception as e:
         logger.error(f"Error updating prompts: {e}")
