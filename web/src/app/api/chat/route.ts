@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { withAuth } from "@/lib/api-middleware";
 import { MessageService } from "@/lib/services/message-service";
 import { ThreadService } from "@/lib/services/thread-service";
-import { OpenAIService } from "@/lib/services/openai-service";
+import OpenAIService from "@/lib/services/openai-service";
 
 async function handleChat(req: NextRequest, context: any) {
   try {

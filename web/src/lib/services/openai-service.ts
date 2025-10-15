@@ -263,6 +263,50 @@ IMPORTANT:
     const extractionData = await this.extractPage(page_index, pageResult.doc_type, imageDataUrl);
     return { pageResult, extractionData };
   }
+
+  /**
+   * Chat with bill details - answer questions about processed documents
+   */
+  async chatWithBillDetails(
+    message: string,
+    billDetails: any[],
+    conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }> = []
+  ): Promise<string> {
+    // Build context from bill details
+    const billContext = billDetails.length > 0
+      ? `Here are the bill/document details from the conversation:\n${JSON.stringify(billDetails, null, 2)}`
+      : 'No bill details available in this conversation yet.';
+
+    const systemPrompt = `You are a helpful assistant that answers questions about bills, invoices, and other business documents. 
+You have access to the document details extracted from the conversation. 
+Use this information to answer the user's questions accurately and concisely.
+If the information is not available in the document details, say so clearly.
+
+${billContext}`;
+
+    // Build messages array with conversation history
+    const messages: any[] = [
+      { role: 'system', content: systemPrompt }
+    ];
+
+    // Add recent conversation history (limit to last 10 messages to avoid token limits)
+    const recentHistory = conversationHistory.slice(-10);
+    messages.push(...recentHistory.map(msg => ({
+      role: msg.role,
+      content: msg.content
+    })));
+
+    // Add the current user message
+    messages.push({ role: 'user', content: message });
+
+    const response = await this.client.chat.completions.create({
+      model: this.MODEL_CLASSIFY, // Use same model as classification
+      temperature: 0.7,
+      messages,
+    });
+
+    return response.choices?.[0]?.message?.content?.trim() || 'Sorry, I could not process your request.';
+  }
 }
 
 export default OpenAIService.instance;

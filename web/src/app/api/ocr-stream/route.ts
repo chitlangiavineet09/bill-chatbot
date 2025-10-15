@@ -49,7 +49,7 @@ export async function OPTIONS() {
 }
 
 async function handleOCRStream(req: NextRequest, context: any) {
-  console.log("OCR Stream - Function called (multi-page)");
+  console.log("=== OCR Stream - Function called (multi-page) ===");
 
   try {
     const formData = await req.formData();
@@ -60,6 +60,8 @@ async function handleOCRStream(req: NextRequest, context: any) {
     
     console.log("OCR Stream - Received data:", { 
       fileName: file?.name, 
+      fileSize: file?.size,
+      fileType: file?.type,
       threadId, 
       userId,
       hasFile: !!file,
@@ -136,15 +138,32 @@ async function handleOCRStream(req: NextRequest, context: any) {
     const stream = new ReadableStream({
       async start(controller) {
         const encoder = new TextEncoder();
-        const send = (obj: unknown) =>
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`));
+        let isClosed = false;
+        
+        const send = (obj: unknown) => {
+          if (!isClosed) {
+            try {
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`));
+            } catch (error) {
+              console.error("Error sending to stream:", error);
+              isClosed = true;
+            }
+          }
+        };
 
         try {
+          console.log("OCR Stream - Starting conversion to images...");
+          console.log("OCR Stream - File is PDF:", isPdf);
+          console.log("OCR Stream - File buffer size:", fileBuffer.length);
+          
           // Convert to images
           let pages: Array<{ base64Image: string; pageIndex?: number }>;
           if (isPdf) {
+            console.log("OCR Stream - Converting PDF to images...");
             pages = await PDFService.convertPDFToImages(fileBuffer);
+            console.log("OCR Stream - PDF converted, pages:", pages.length);
           } else {
+            console.log("OCR Stream - Processing as image...");
             const mimeType = file.type || "image/png";
             pages = [
               { base64Image: `data:${mimeType};base64,${fileBuffer.toString("base64")}` },
@@ -152,9 +171,12 @@ async function handleOCRStream(req: NextRequest, context: any) {
           }
 
           const totalPages = pages?.length || 0;
+          console.log("OCR Stream - Total pages:", totalPages);
+          
           if (!totalPages) throw new Error("No pages to process.");
 
           // Announce start
+          console.log("OCR Stream - Sending start event...");
           send({ type: "start", total_pages: totalPages });
 
           // Progress: queueing all pages
@@ -184,10 +206,17 @@ async function handleOCRStream(req: NextRequest, context: any) {
               try {
                 send({ type: "progress", stage: "process_start", page: idx });
 
+                console.log(`OCR Stream - Processing page ${idx}...`);
                 const { pageResult, extractionData } = await OpenAIService.instance.processPage(
                   idx,
                   p.base64Image
                 );
+
+                console.log(`OCR Stream - Page ${idx} result:`, {
+                  pageResult,
+                  extractionData,
+                  hasExtraction: !!extractionData
+                });
 
                 const valid = {
                   page_index: pageResult?.page_index ?? idx,
@@ -197,6 +226,8 @@ async function handleOCRStream(req: NextRequest, context: any) {
                   key_hints: pageResult?.key_hints ?? [],
                   extraction_data: extractionData ?? {},
                 };
+
+                console.log(`OCR Stream - Page ${idx} valid object:`, valid);
 
                 // Save per-page result
                 await MessageService.createMessage({
@@ -235,13 +266,27 @@ async function handleOCRStream(req: NextRequest, context: any) {
             })
           );
 
-          // Wait for all pages to settle (we want *every* page’s outcome)
+          // Wait for all pages to settle (we want *every* page's outcome)
           await Promise.allSettled(tasks);
+
+          // Debug: Check what's in perPageResults
+          console.log("OCR Stream - perPageResults array:", perPageResults);
+          console.log("OCR Stream - perPageResults length:", perPageResults.length);
+          console.log("OCR Stream - perPageResults items:", perPageResults.map((r, i) => ({
+            index: i,
+            success: r?.success,
+            hasResult: !!r?.result,
+            docType: r?.result?.doc_type,
+            hasExtraction: !!r?.result?.extraction_data
+          })));
 
           // Build final arrays
           const page_results = perPageResults
             .map((r) => r?.result)
             .filter(Boolean) as Array<NonNullable<typeof perPageResults[number]["result"]>>;
+
+          console.log("OCR Stream - page_results length after filter:", page_results.length);
+          console.log("OCR Stream - page_results:", page_results);
 
           // Group by doc_type: collect page spans & merge extraction data
           const groupedMap = new Map<
@@ -271,6 +316,7 @@ async function handleOCRStream(req: NextRequest, context: any) {
 
           // Debug logging for grouped results
           console.log("OCR Stream - Grouped results structure:", JSON.stringify(grouped_results, null, 2));
+          console.log("OCR Stream - Grouped results length:", grouped_results.length);
           console.log("OCR Stream - First grouped result:", grouped_results[0]);
           console.log("OCR Stream - First grouped result data:", grouped_results[0]?.data);
 
@@ -310,12 +356,22 @@ async function handleOCRStream(req: NextRequest, context: any) {
             },
           });
 
-          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+          if (!isClosed) {
+            controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+          }
         } catch (error: any) {
-          console.error("OCR Stream processing error:", error);
-          send({ type: "error", error: error instanceof Error ? error.message : "Unknown error" });
+          console.error("=== OCR Stream processing error ===");
+          console.error("Error type:", error?.constructor?.name);
+          console.error("Error message:", error?.message);
+          console.error("Error stack:", error?.stack);
+          console.error("Full error:", error);
+          send({ type: "error", error: error instanceof Error ? error.message : String(error) });
         } finally {
-          controller.close();
+          console.log("OCR Stream - Stream closing...");
+          if (!isClosed) {
+            isClosed = true;
+            controller.close();
+          }
         }
       },
     });
@@ -331,8 +387,12 @@ async function handleOCRStream(req: NextRequest, context: any) {
       },
     });
   } catch (error: any) {
-    console.error("OCR Stream API Error:", error);
-    return new Response(JSON.stringify({ error: "OCR Stream processing failed" }), {
+    console.error("=== OCR Stream API Error (outer catch) ===");
+    console.error("Error type:", error?.constructor?.name);
+    console.error("Error message:", error?.message);
+    console.error("Error stack:", error?.stack);
+    console.error("Full error:", error);
+    return new Response(JSON.stringify({ error: "OCR Stream processing failed", details: error?.message }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });

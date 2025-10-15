@@ -44,6 +44,9 @@ export default function Home() {
       const response = await fetch(`/api/messages?threadId=${threadId}`);
       if (response.ok) {
         const data = await response.json();
+        console.log("Loaded messages from database:", data);
+        console.log("Number of messages:", data.length);
+        console.log("Message types:", data.map((m: any) => ({ role: m.role, kind: m.kind })));
         setMessages(data);
       }
     } catch (error) {
@@ -133,15 +136,20 @@ export default function Home() {
           throw new Error("No file selected");
         }
         
+        console.log("Frontend - Uploading file:", file.name, "Size:", file.size, "Type:", file.type);
+        console.log("Frontend - Thread ID:", currentThreadId);
+        
         // For file uploads, use FormData and call /api/ocr-stream directly
         const formData = new FormData();
         formData.append("file", file);
         formData.append("threadId", currentThreadId);
         
+        console.log("Frontend - Calling /api/ocr-stream...");
         response = await fetch("/api/ocr-stream", { 
           method: "POST", 
           body: formData
         });
+        console.log("Frontend - Response status:", response.status, response.statusText);
       } else {
         // For text messages, use JSON and call /api/chat
         response = await fetch("/api/chat", { 
@@ -360,15 +368,21 @@ export default function Home() {
   };
 
   const onUpload = async (file: File) => {
+    console.log("=== onUpload called ===");
+    console.log("File:", file.name, "Size:", file.size, "Type:", file.type);
+    console.log("Current thread ID:", currentThreadId);
+    
     // Add the file to the files array and trigger the send function
     setFiles([file]);
     
     // Create a new thread if none exists
     if (!currentThreadId) {
+      console.log("No thread exists, creating new one...");
       await createNewThread();
       return;
     }
     
+    console.log("Calling send() with file...");
     // Use the existing send function to handle the file upload
     await send();
   };

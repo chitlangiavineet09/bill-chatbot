@@ -1,42 +1,25 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
-enum UserRole {
-  User
-  Admin
-}
-
-enum MessageRole {
-  user
-  assistant
-  system
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String?
-  name      String?
-  role      UserRole @default(User)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
+  id          String       @id @default(cuid())
+  email       String       @unique
+  password    String?
+  name        String?
+  role        UserRole     @default(User)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  accounts    Account[]
   chatThreads ChatThread[]
   messages    Message[]
-  accounts    Account[]
   sessions    Session[]
 
-  // Indexes for performance
   @@index([email])
   @@index([role])
   @@index([createdAt])
@@ -49,15 +32,14 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@map("accounts")
@@ -83,17 +65,14 @@ model VerificationToken {
 }
 
 model ChatThread {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   title     String?
   userId    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  Message[]
 
-  // Relations
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  messages Message[]
-
-  // Indexes for performance
   @@index([userId])
   @@index([updatedAt])
   @@index([createdAt])
@@ -101,20 +80,17 @@ model ChatThread {
 }
 
 model Message {
-  id        String     @id @default(cuid())
+  id        String        @id @default(cuid())
   content   String
   role      MessageRole
-  kind      String?    // Message type: markdown, html, page-results, grouped-results
+  kind      String?
   threadId  String
   userId    String
-  createdAt DateTime   @default(now())
+  createdAt DateTime      @default(now())
+  files     MessageFile[]
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  thread    ChatThread    @relation(fields: [threadId], references: [id], onDelete: Cascade)
 
-  // Relations
-  thread ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
-  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  files  MessageFile[]
-
-  // Indexes for performance
   @@index([threadId])
   @@index([userId])
   @@index([createdAt])
@@ -131,12 +107,20 @@ model MessageFile {
   fileType  String
   fileUrl   String
   createdAt DateTime @default(now())
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
 
-  // Relations
-  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
-
-  // Indexes for performance
   @@index([messageId])
   @@index([fileType])
   @@map("message_files")
+}
+
+enum UserRole {
+  User
+  Admin
+}
+
+enum MessageRole {
+  user
+  assistant
+  system
 }
